@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>WIS2 Live</title>
+    <link rel="canonical" href="https://www.benwebb.com/wis"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+    integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI="
+    crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+    integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM="
+    crossorigin=""></script>
+    <script src="https://unpkg.com/mqtt@4.0.1/dist/mqtt.min.js"></script>
+
+    <link rel="shortcut icon" href="./assets/images/favicon.ico" type="image/x-icon">
+    <link rel="icon" type="image/png" sizes="32x32" href="./assets/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="./assets/images/favicon-16x16.png">
+
+    <style>
+        .center {
+            text-align: center;
+            width: 100%;
+        }
+        .body {
+            margin: 0;
+            width: 100%;
+        }
+        .popup {
+            margin: 2;
+            padding: 1;
+            max-width: 500px;
+        }
+    </style>
+</head>
+
+<body class="body">
+    <div id="map" class="center" style="height: 100vh;"></div>
+</body>
+<script>
+    const host = 'wss://globalbroker.meteo.fr:443/mqtt';
+    // const host = 'mqtts://globalbroker.meteo.fr:8883/mqtt';
+    const options = {
+        username: 'everyone',
+        password: 'everyone',
+        keepalive: 60,
+        protocolVersion: 5,
+        reconnectPeriod: 1000,
+        connectTimeout: 30 * 1000,
+    };
+
+    console.log('Connecting mqtt client');
+    const client = mqtt.connect(host, options);
+
+    client.on('connect', function () {
+        client.subscribe(['origin/#', 'cache/#'], function (err) {
+            if (!err) {
+                console.log('Connected!')
+            }
+        })
+    })
+
+    client.on('error', (err) => {
+        console.log('Connection error: ', err)
+        client.end()
+    });
+
+
+    client.on('reconnect', () => {
+        console.log('Reconnecting...')
+    });
+    String.prototype.rsplit = function (sep, maxsplit) {
+        var split = this.split(sep);
+        return maxsplit ? [split.slice(0, -maxsplit).join(sep)].concat(split.slice(-maxsplit)) : split;
+    };
+    var map = L.map('map').setView([30, 0], 3);
+    map.attributionControl.setPrefix('');
+    var tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attributionControl: false
+    }).addTo(map);
+    client.on('message', function (topic, message) {
+        // message is Buffer
+        const feature = JSON.parse(message.toString())
+        if (feature.geometry && feature.geometry.type === 'Point') {
+            var marker = L.geoJSON(feature, {
+                pointToLayer: function (geoJsonPoint, latlng) {
+                    return L.circleMarker(latlng, {
+                        color: "#f8a700",
+                        radius: 2,
+                        weight: 1,
+                        opacity: 1,
+                        fillOpacity: 0.8,
+                    });
+                }
+            }).addTo(map);
+            console.log(topic)
+            var [origin, topic] = topic.split('/wis2/')
+            var t = topic.split('/').slice(0, -1).join('/')
+
+            var popup = `<b>Channel: </b>${origin}/wis2<br>
+                         <b>Topic: </b>${t}</br>`
+            if (topic.search('/WIGOS') !== -1) {
+                var wsi = topic.split('/').slice(-1).join('')
+                popup += `<b>WIGOS Station identifier: </b>${wsi}<br>`
+            } else if (feature.properties.wigos_station_identifier) {
+                popup += `<b>WIGOS Station identifier: </b>${feature.properties.wigos_station_identifier}`
+            }
+            marker.bindPopup(`<div class="popup"><p>${popup}</p></div>`, {
+                maxWidth: 500
+            }).openPopup()
+            if (t.search('/swe/smhi/') !== -1) {
+                setTimeout(removeMarker, 59000, marker);
+            } else {
+                setTimeout(removeMarker, 3590000, marker);
+            }
+        } else if (feature.geometry && feature.geometry.hasOwnProperty('type')) {
+            var poly = L.geoJSON(feature).addTo(map);
+            setTimeout(removeMarker, 3590000, poly);
+        }
+    })
+
+    function removeMarker(feature) {
+        feature.removeFrom(map);
+    }
+
+
+</script>
+
+</html>
