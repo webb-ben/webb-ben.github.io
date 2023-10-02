@@ -2,12 +2,7 @@
 <html>
 
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>WIS2 Live</title>
-    <link rel="canonical" href="https://www.benwebb.com/wis"/>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
     integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI="
     crossorigin=""/>
@@ -15,32 +10,34 @@
     integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM="
     crossorigin=""></script>
     <script src="https://unpkg.com/mqtt@4.0.1/dist/mqtt.min.js"></script>
-
-    <link rel="shortcut icon" href="./assets/images/favicon.ico" type="image/x-icon">
-    <link rel="icon" type="image/png" sizes="32x32" href="./assets/images/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="./assets/images/favicon-16x16.png">
-
     <style>
         .center {
             text-align: center;
             width: 100%;
+            height: 100vh;
         }
         .body {
             margin: 0;
-            width: 100%;
         }
         .popup {
             margin: 2;
             padding: 1;
-            max-width: 500px;
+            max-width: 360px;
         }
     </style>
 </head>
 
 <body class="body">
-    <div id="map" class="center" style="height: 100vh;"></div>
+    <div id="map" class="center"></div>
 </body>
 <script>
+    var map = L.map('map').setView([30, 0], 3);
+    map.attributionControl.setPrefix('');
+    var tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attributionControl: false
+    }).addTo(map);
+
     const host = 'wss://globalbroker.meteo.fr:443/mqtt';
     // const host = 'mqtts://globalbroker.meteo.fr:8883/mqtt';
     const options = {
@@ -72,54 +69,59 @@
     client.on('reconnect', () => {
         console.log('Reconnecting...')
     });
-    String.prototype.rsplit = function (sep, maxsplit) {
-        var split = this.split(sep);
-        return maxsplit ? [split.slice(0, -maxsplit).join(sep)].concat(split.slice(-maxsplit)) : split;
-    };
-    var map = L.map('map').setView([30, 0], 3);
-    map.attributionControl.setPrefix('');
-    var tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attributionControl: false
-    }).addTo(map);
+
     client.on('message', function (topic, message) {
         // message is Buffer
         const feature = JSON.parse(message.toString())
         if (feature.geometry && feature.geometry.type === 'Point') {
             var marker = L.geoJSON(feature, {
                 pointToLayer: function (geoJsonPoint, latlng) {
-                    return L.circleMarker(latlng, {
-                        color: "#f8a700",
-                        radius: 2,
+                    var color = topic.startsWith('cache') ? "#F8A700" : "#01AAD3";
+                    var m = L.circleMarker(latlng, {
+                        color: color,
+                        radius: 3,
                         weight: 1,
                         opacity: 1,
-                        fillOpacity: 0.8,
+                        fillOpacity: 0.7,
                     });
+                    recolorMarker(m);
+                    return m;
                 }
             }).addTo(map);
-            console.log(topic)
+
             var [origin, topic] = topic.split('/wis2/')
             var t = topic.split('/').slice(0, -1).join('/')
+            var wsi = feature.properties.wigos_station_identifier;
 
-            var popup = `<b>Channel: </b>${origin}/wis2<br>
-                         <b>Topic: </b>${t}</br>`
-            if (topic.search('/WIGOS') !== -1) {
-                var wsi = topic.split('/').slice(-1).join('')
-                popup += `<b>WIGOS Station identifier: </b>${wsi}<br>`
-            } else if (feature.properties.wigos_station_identifier) {
-                popup += `<b>WIGOS Station identifier: </b>${feature.properties.wigos_station_identifier}`
+            var popup = `<b>Channel: </b>${origin}<br>`     
+            popup += `<b>WIGOS Station identifier: </b>${wsi}<br>`
+
+            for (const link of feature.links){
+                if (link.rel == 'canonical'){
+                    popup += `<b>Data: </b>
+                              <a href="${link.href}"" type="${link.type}" title="${link.title}" rel="${link.rel}"> ${feature.properties.data_id} </a>`
+                }
             }
             marker.bindPopup(`<div class="popup"><p>${popup}</p></div>`, {
                 maxWidth: 500
-            }).openPopup()
-            if (t.search('/swe/smhi/') !== -1) {
-                setTimeout(removeMarker, 59000, marker);
-            } else {
-                setTimeout(removeMarker, 3590000, marker);
-            }
+            })
+
+            marker.bindTooltip(wsi).openTooltip();
+            setTimeout(closeTooltip, 2000, marker)
+            setTimeout(removeMarker, 3590000, marker);
         } else if (feature.geometry && feature.geometry.hasOwnProperty('type')) {
             var poly = L.geoJSON(feature).addTo(map);
-            setTimeout(removeMarker, 3590000, poly);
+            var popup = `<b>Channel: </b>${origin}<br>`     
+            popup += `<b>WIGOS Station identifier: </b>${wsi}<br>`
+
+            for (const link of feature.links){
+                popup += `<b>Data: </b>
+                    <a href="${link.href}"" type="${link.type}" title="${link.title}" rel="${link.rel}"> ${feature.properties.data_id} </a>`
+            }
+            poly.bindPopup(`<div class="popup"><p>${popup}</p></div>`, {
+                maxWidth: 500
+            })
+            setTimeout(removeMarker, 59000, poly);
         }
     })
 
@@ -127,6 +129,46 @@
         feature.removeFrom(map);
     }
 
+    function closeTooltip(feature){
+        feature.closeTooltip();
+    }
+
+    function recolorMarker(m){
+        m.options.color = shadeColor(m.options.color, -5);
+        m.removeFrom(map);
+        m.addTo(map);
+        setTimeout(recolorMarker, 15000, m);
+    }
+
+    function shadeColor(color, percent) {
+
+        var R = parseInt(color.substring(1,3),16);
+        var G = parseInt(color.substring(3,5),16);
+        var B = parseInt(color.substring(5,7),16);
+    
+        R = parseInt(R * (100 + percent) / 100);
+        G = parseInt(G * (100 + percent) / 100);
+        B = parseInt(B * (100 + percent) / 100);
+    
+        R = (R<255)?R:255;  
+        G = (G<255)?G:255;  
+        B = (B<255)?B:255;  
+    
+        R = Math.round(R)
+        G = Math.round(G)
+        B = Math.round(B)
+    
+        var RR = ((R.toString(16).length==1)?"0"+R.toString(16):R.toString(16));
+        var GG = ((G.toString(16).length==1)?"0"+G.toString(16):G.toString(16));
+        var BB = ((B.toString(16).length==1)?"0"+B.toString(16):B.toString(16));
+    
+        return "#"+RR+GG+BB;
+    }
+
+    String.prototype.rsplit = function (sep, maxsplit) {
+        var split = this.split(sep);
+        return maxsplit ? [split.slice(0, -maxsplit).join(sep)].concat(split.slice(-maxsplit)) : split;
+    };
 
 </script>
 
