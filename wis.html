@@ -3,6 +3,8 @@
 
 <head>
     <title>WIS2 Live</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
     integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI="
     crossorigin=""/>
@@ -31,18 +33,38 @@
     <div id="map" class="center"></div>
 </body>
 <script>
+    String.prototype.rsplit = function (sep, maxsplit) {
+        var split = this.split(sep);
+        return maxsplit ? [split.slice(0, -maxsplit).join(sep)].concat(split.slice(-maxsplit)) : split;
+    };
+    String.prototype.hexDecode = function(){
+        var j;
+        var hexes = this.match(/.{1,4}/g) || [];
+        var back = "";
+        for(j = 0; j<hexes.length; j++) {
+            back += String.fromCharCode(parseInt(hexes[j], 16));
+        }
+    
+        return back;
+    }
+    
     var map = L.map('map').setView([30, 0], 3);
     map.attributionControl.setPrefix('');
     var tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
+        minZoom: 3,
         attributionControl: false
     }).addTo(map);
+
+    map.on('zoomend', function() {
+        reRender();
+    });
 
     const host = 'wss://globalbroker.meteo.fr:443/mqtt';
     // const host = 'mqtts://globalbroker.meteo.fr:8883/mqtt';
     const options = {
         username: 'everyone',
-        password: 'everyone',
+        password: '00650076006500720079006f006e0065'.hexDecode(),
         keepalive: 60,
         protocolVersion: 5,
         reconnectPeriod: 1000,
@@ -70,60 +92,88 @@
         console.log('Reconnecting...')
     });
 
+    const markers = new Array();
     client.on('message', function (topic, message) {
         // message is Buffer
         const feature = JSON.parse(message.toString())
         if (feature.geometry && feature.geometry.type === 'Point') {
+            var [origin, t] = topic.split('/wis2/')
+            var wsi = feature.properties.wigos_station_identifier;
             var marker = L.geoJSON(feature, {
                 pointToLayer: function (geoJsonPoint, latlng) {
-                    var color = topic.startsWith('cache') ? "#F8A700" : "#01AAD3";
+                    var color = topic.startsWith('cache') ? "#6cc644" : "#D5E3F0";
                     var m = L.circleMarker(latlng, {
-                        color: color,
-                        radius: 3,
+                        color: shadeColor(color, -25),
+                        fillColor: color,
+                        radius: estimateRadius(),
                         weight: 1,
                         opacity: 1,
-                        fillOpacity: 0.7,
+                        fillOpacity: 1,
                     });
-                    recolorMarker(m);
+                    recolorMarker(m); 
+                    markers.push(m);
                     return m;
                 }
             }).addTo(map);
 
-            var [origin, topic] = topic.split('/wis2/')
-            var t = topic.split('/').slice(0, -1).join('/')
-            var wsi = feature.properties.wigos_station_identifier;
-
             var popup = `<b>Channel: </b>${origin}<br>`     
             popup += `<b>WIGOS Station identifier: </b>${wsi}<br>`
-
-            for (const link of feature.links){
-                if (link.rel == 'canonical'){
-                    popup += `<b>Data: </b>
-                              <a href="${link.href}"" type="${link.type}" title="${link.title}" rel="${link.rel}"> ${feature.properties.data_id} </a>`
+            if (origin.startsWith('cache')){
+                for (const link of feature.links){
+                    const filename = link.href.rsplit('/', 1).pop();
+                    if (link.rel == 'canonical'){
+                        popup += `<b>Data: </b>
+                                  <a target="_blank" href="${link.href}"" type="${link.type}" title="${filename}" rel="${link.rel}">${filename}</a>`
+                    }
                 }
             }
+
             marker.bindPopup(`<div class="popup"><p>${popup}</p></div>`, {
                 maxWidth: 500
             })
 
             marker.bindTooltip(wsi).openTooltip();
-            setTimeout(closeTooltip, 2000, marker)
-            setTimeout(removeMarker, 3590000, marker);
+            setTimeout(closeTooltip, 1500, marker)
         } else if (feature.geometry && feature.geometry.hasOwnProperty('type')) {
-            var poly = L.geoJSON(feature).addTo(map);
-            var popup = `<b>Channel: </b>${origin}<br>`     
-            popup += `<b>WIGOS Station identifier: </b>${wsi}<br>`
+            var poly = L.geoJSON(feature);
+            var bounds = poly.getBounds();
+            if (bounds._northEast.lat >= 90 && bounds._southWest.lat <= -90){
+                console.log(`Invalid bounds from ${topic}`);
+                return;
+            } else {
+                poly.addTo(map);
+            }
 
+            var popup = `<b>Topic: </b>${feature.id}<br>`
             for (const link of feature.links){
-                popup += `<b>Data: </b>
-                    <a href="${link.href}"" type="${link.type}" title="${link.title}" rel="${link.rel}"> ${feature.properties.data_id} </a>`
+                if (link.type != 'MQTT'){
+                    popup += `<b>${link.type}: </b> 
+                    <a target="${link.type}" href="${link.href}"" type="${link.type}" title="${link.title}" rel="${link.rel}">${link.title}</a><br>`
+                }
             }
             poly.bindPopup(`<div class="popup"><p>${popup}</p></div>`, {
                 maxWidth: 500
-            })
-            setTimeout(removeMarker, 59000, poly);
+            });
+            poly.bringToBack();
+            setTimeout(removeMarker, 590000, poly);
         }
     })
+
+    function reRender() {
+        var z = map.getZoom();
+        if (z <= 17){
+            for (const m of markers){
+                m.setRadius(estimateRadius());
+                m.redraw();
+            }
+        }
+
+    }
+
+    function estimateRadius(){
+        var z = map.getZoom();
+        return 1.5 * (z - 2);
+    }
 
     function removeMarker(feature) {
         feature.removeFrom(map);
@@ -134,10 +184,14 @@
     }
 
     function recolorMarker(m){
-        m.options.color = shadeColor(m.options.color, -5);
-        m.removeFrom(map);
-        m.addTo(map);
-        setTimeout(recolorMarker, 15000, m);
+        m.redraw();
+        m.setStyle({
+            oapcity: m.options.oapcity - 0.02,
+            fillOpacity: m.options.fillOpacity - 0.02,
+            color: shadeColor(m.options.color, -5),
+            fillColor: shadeColor(m.options.fillColor, -5)
+        });
+        setTimeout(recolorMarker, 120000, m);
     }
 
     function shadeColor(color, percent) {
@@ -164,11 +218,6 @@
     
         return "#"+RR+GG+BB;
     }
-
-    String.prototype.rsplit = function (sep, maxsplit) {
-        var split = this.split(sep);
-        return maxsplit ? [split.slice(0, -maxsplit).join(sep)].concat(split.slice(-maxsplit)) : split;
-    };
 
 </script>
 
