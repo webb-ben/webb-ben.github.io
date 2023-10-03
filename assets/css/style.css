@@ -8,7 +8,19 @@
  */
 
 
-
+.center {
+  text-align: center;
+  width: 100%;
+  height: 100vh;
+}
+.body {
+  margin: 0;
+}
+.popup {
+  margin: 2;
+  padding: 1;
+  max-width: 360px;
+}
 
 
 /*-----------------------------------*\

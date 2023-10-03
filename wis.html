@@ -2,31 +2,40 @@
 <html>
 
 <head>
-    <title>WIS2 Live</title>
+    <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
-    integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI="
-    crossorigin=""/>
-    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
-    integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM="
-    crossorigin=""></script>
+  
+    <title>WIS2 Live</title>
+    <link rel="canonical" href="https://www.benwebb.com/wis"/>
+    <meta property="og:title" content="WIS2 Live"/>
+    <meta property="og:image" content="https://www.benwebb.com/assets/images/ben.png"/>
+    <meta property="og:url" content="https://www.benwebb.com/wis"/>
+    <meta property="og:site_name" content="WIS2 Live"/>
+    <meta property="og:type" content="website"/>
+    <meta name="twitter:card" content="summary_large_image"/>
+    <meta name="twitter:title" content="WIS2 Live"/>
+    <meta name="twitter:image" content="https://www.benwebb.com/assets/images/wis.png"/>
+  
+    <!--
+      - favicon
+    -->
+    <link rel="shortcut icon" href="./assets/images/favicon.ico" type="image/x-icon">
+    <link rel="icon" type="image/png" sizes="32x32" href="./assets/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="./assets/images/favicon-16x16.png">
+
+    <!--
+        - custom css link
+    -->
+    <link rel="stylesheet" href="./assets/css/style.css">
+
+
+    <!--
+        - leaflet
+    -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
     <script src="https://unpkg.com/mqtt@4.0.1/dist/mqtt.min.js"></script>
-    <style>
-        .center {
-            text-align: center;
-            width: 100%;
-            height: 100vh;
-        }
-        .body {
-            margin: 0;
-        }
-        .popup {
-            margin: 2;
-            padding: 1;
-            max-width: 360px;
-        }
-    </style>
 </head>
 
 <body class="body">
