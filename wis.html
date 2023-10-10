@@ -13,7 +13,7 @@
     <meta property="og:url" content="https://www.benwebb.com/wis"/>
     <meta property="og:site_name" content="WIS 2.0 Live"/>
     <meta property="og:description" 
-        content="WIS 2.0 Live shows real-time weather observations as they are published through the WMO Information System. This page is subscribed to MQTT notifications from the Global Broker provided by Meteo France." />
+        content="WIS 2.0 Live shows real-time weather observations as they are published through the WMO Information System. This page is not affiliated with WMO." />
     <meta property="og:type" content="website"/>
     <meta name="twitter:card" content="summary_large_image"/>
     <meta name="twitter:title" content="WIS 2.0 Live"/>
@@ -22,9 +22,9 @@
     <!--
       - favicon
     -->
-    <link rel="shortcut icon" href="./assets/images/favicon-wmo.ico" type="image/x-icon">
-    <link rel="icon" type="image/png" sizes="32x32" href="./assets/images/favicon-wmo-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="./assets/images/favicon-wmo-16x16.png">
+    <link rel="shortcut icon" href="./assets/images/favicon-wis.ico" type="image/x-icon">
+    <link rel="icon" type="image/png" sizes="32x32" href="./assets/images/favicon-wis-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="./assets/images/favicon-wis-16x16.png">
 
     <!--
         - custom css link
@@ -70,6 +70,42 @@
     map.on('zoomend', function() {
         reRender();
     });
+
+    L.Control.Info = L.Control.extend({
+        onAdd: function(map) {
+            var container = L.DomUtil.create('div', 'leaflet-control');
+            container.style.margin = '8px'
+
+            var icon = L.DomUtil.create('span', 'dot', container);
+            icon.innerHTML = '<i style="font-size: 18px;">i</i>';
+        
+            var msg = L.DomUtil.create('span', 'popup', container);
+            msg.innerHTML = '<div style="margin: 4px;">WIS 2.0 Live shows real-time weather observations as they are published through the WMO Information System. This page is not affiliated with WMO.</div>'
+            msg.style.display = 'none';
+
+            L.DomEvent.on(icon, 'mouseover', function(){
+                msg.style.display = 'inline-block';
+                icon.style.display = 'none';
+            });
+
+            L.DomEvent.on(msg, 'mouseout', function(){
+                msg.style.display = 'none';
+                icon.style.display = 'inline-block';
+            });
+
+            return container;
+        },
+    
+        onRemove: function(map) {
+            // Nothing to do here
+        }
+    });
+    
+    L.control.info = function(opts) {
+        return new L.Control.Info(opts);
+    }
+    
+    L.control.info({ position: 'bottomright' }).addTo(map);
 
     const host = 'wss://globalbroker.meteo.fr:443/mqtt';
     // const host = 'mqtts://globalbroker.meteo.fr:8883/mqtt';
@@ -127,19 +163,34 @@
                 }
             }).addTo(map);
 
-            var popup = `<b>Channel: </b>${origin}<br>`     
-            popup += `<b>WIGOS Station identifier: </b>${wsi}<br>`
+            var popup = `
+                        <thead>
+                         <tr>
+                            <th>Channel</th><td>${origin}</td>
+                         </tr><tr>
+                            <th>WIGOS Station Identifier</th><td><a target="_blank" href="https://oscar.wmo.int/surface/#/search/station/stationReportDetails/${wsi}">${wsi}</a></td>
+                         </tr><tr>
+                            <th>Publish Time</th><td>${feature.properties.pubtime}</td>
+                         </tr>
+                        </thead>
+                         `
             if (origin.startsWith('cache')){
+                popup += '<tbody><th><br>Links</th>'
                 for (const link of feature.links){
-                    const filename = link.href.rsplit('/', 1).pop();
+                    const url = new URL(link.href);
+                    const filename = url.pathname.rsplit('/', 1).pop();
                     if (link.rel == 'canonical'){
-                        popup += `<b>Data: </b>
-                                  <a target="_blank" href="${link.href}"" type="${link.type}" title="${filename}" rel="${link.rel}">${filename}</a>`
+                        popup += `<tr><th>${link.rel}</th><td><a target="_blank" href="${link.href}"" type="${link.type}" title="${filename}" rel="${link.rel}">${filename}</a></td></tr>`
+                    } else if (link.rel == 'via'){
+                        popup += `<tr><th>${link.rel}</th><td><a target="_blank" href="${link.href}"" type="${link.type}" rel="${link.rel}">${url.hostname}</a></td></tr>`
+                    } else {
+                        popup += `<tr><th>${link.rel}</th><td><a target="_blank" href="${link.href}"" type="${link.type}" rel="${link.rel}">${link.href}</a></td></tr>`
                     }
                 }
+                popup += '</tbody>'
             }
 
-            marker.bindPopup(`<div class="popup"><p>${popup}</p></div>`, {
+            marker.bindPopup(`<table>${popup}</table>`, {
                 maxWidth: 500
             })
 
@@ -198,8 +249,8 @@
         m.setStyle({
             opacity: m.options.opacity - 0.01667,
             fillOpacity: m.options.fillOpacity - 0.01667,
-            color: shadeColor(m.options.color, -5),
-            fillColor: shadeColor(m.options.fillColor, -5)
+            color: shadeColor(m.options.color, -2.5),
+            fillColor: shadeColor(m.options.fillColor, -2.5)
         });
         m.redraw();
         if (m.options.opacity >= 0.1){

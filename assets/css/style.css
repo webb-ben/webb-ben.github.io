@@ -3,11 +3,16 @@
 \*-----------------------------------*/
 
 
-/**
- * copyright 2022 @codewithsadee
- */
-
-
+.dot {
+  height: 30px;
+  width: 30px;
+  border: 2px solid #BBBBBB;
+  background-color: #FFFFFF;
+  border-radius: 50%;
+  text-align: center;
+  text-justify: center;
+  display: inline-block;
+}
 .center {
   text-align: center;
   width: 100%;
@@ -17,11 +22,16 @@
   margin: 0;
 }
 .popup {
-  margin: 2;
-  padding: 1;
-  max-width: 360px;
+  border-radius: 2px;
+  border: 2px solid #BBBBBB;
+  background-color: #FFFFFF;
+  margin: 2px;
+  padding: 2px;
 }
 
+/**
+ * copyright 2022 @codewithsadee
+ */
 
 /*-----------------------------------*\
   #CUSTOM PROPERTY
