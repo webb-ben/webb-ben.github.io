@@ -8,23 +8,45 @@ interface Props {
 }
 
 const { project } = Astro.props;
+const isRepo = project.href.startsWith('https://github.com/');
 ---
 
 <li class="card">
   <a href={project.href}>
-    <Image
-      src={project.image}
-      alt=""
-      widths={[360, 720]}
-      sizes="(max-width: 40rem) 100vw, 360px"
-      loading="lazy"
-    />
+    <div class="preview">
+      {
+        project.image && (
+          <Image
+            src={project.image}
+            alt=""
+            widths={[360, 720]}
+            sizes="(max-width: 40rem) 100vw, 360px"
+            loading="lazy"
+          />
+        )
+      }
+      {
+        project.embed && (
+          <iframe
+              src={project.embed}
+              title={`Live preview of ${project.title}`}
+              loading="lazy"
+              tabindex="-1"
+              aria-hidden="true"
+              referrerpolicy="no-referrer"
+            />
+        )
+      }
+    </div>
     <div class="meta">
       <h3>
         {project.title}
-        <Icon name="lucide:arrow-up-right" aria-hidden="true" />
+        <Icon name={isRepo ? 'mdi:github' : 'lucide:arrow-up-right'} aria-hidden="true" />
       </h3>
-      <p>{project.category}</p>
+      <p>
+        {project.category}
+        {project.embed && <span class="live">Live</span>}
+      </p>
     </div>
   </a>
 </li>
@@ -49,12 +71,49 @@ const { project } = Astro.props;
     transform: translateY(-2px);
   }
 
+  .preview {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    background: var(--accent-soft);
+    border-bottom: 1px solid var(--border);
+  }
+
   img {
     width: 100%;
-    aspect-ratio: 16 / 10;
+    height: 100%;
     object-fit: cover;
     object-position: top;
-    border-bottom: 1px solid var(--border);
+  }
+
+  /* Render the site at 4x the card size, then shrink it, so it lays out like a desktop page. */
+  iframe {
+    position: absolute;
+    inset: 0;
+    width: 400%;
+    height: 400%;
+    border: 0;
+    transform: scale(0.25);
+    transform-origin: 0 0;
+    pointer-events: none;
+    background: transparent;
+  }
+
+  .live {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-left: 0.5rem;
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .live::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #ef4444;
   }
 
   .meta {

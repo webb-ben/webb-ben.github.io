@@ -9,7 +9,7 @@ export default defineConfig({
     icon(),
     sitemap({
       // Served by a separate GitHub Pages project on the same domain.
-      customPages: ['https://benwebb.com/wis-live/'],
+      customPages: ['https://benwebb.com/wis-live/', 'https://benwebb.com/amtracker/'],
     }),
   ],
   redirects: {

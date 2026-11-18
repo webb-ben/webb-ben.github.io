@@ -58,18 +58,40 @@ export const focus = [
 
 export type Project = {
   title: string;
+  /** Where the card links: the live site, or the GitHub repo for open-source work. */
   href: string;
   category: 'Open source' | 'Web development';
-  image: ImageMetadata;
+  /** Screenshot; also the placeholder shown while a live preview loads. */
+  image?: ImageMetadata;
+  /** URL rendered as a scaled-down live iframe preview instead of the screenshot. */
+  embed?: string;
 };
 
 export const projects: Project[] = [
-  { title: 'WIS 2.0 Live', href: 'https://benwebb.com/wis-live', category: 'Web development', image: wis },
-  { title: 'pygeoapi', href: 'https://demo.pygeoapi.io/master', category: 'Open source', image: pygeoapi },
+  {
+    title: 'WIS 2.0 Live',
+    href: 'https://benwebb.com/wis-live',
+    category: 'Web development',
+    image: wis,
+    embed: 'https://benwebb.com/wis-live/',
+  },
+  {
+    title: 'Amtracker',
+    href: 'https://benwebb.com/amtracker',
+    category: 'Web development',
+    embed: 'https://benwebb.com/amtracker/',
+  },
+  { title: 'pygeoapi', href: 'https://github.com/geopython/pygeoapi', category: 'Open source', image: pygeoapi },
   { title: 'Global River Runner', href: 'https://river-runner-global.samlearner.com/', category: 'Web development', image: riverRunner },
-  { title: 'NLDI', href: 'https://labs.waterdata.usgs.gov/api/nldi/swagger-ui/index.html#/', category: 'Open source', image: nldi },
-  { title: 'Covid Map', href: 'https://benwebb.com/usa-map', category: 'Web development', image: usaMap },
-  { title: 'wis2box', href: 'https://demo.wis2box.wis.wmo.int/', category: 'Open source', image: wis2box },
+  { title: 'NLDI', href: 'https://github.com/internetofwater/nldi-services', category: 'Open source', image: nldi },
+  {
+    title: 'Covid Map',
+    href: 'https://benwebb.com/usa-map',
+    category: 'Web development',
+    image: usaMap,
+    embed: 'https://benwebb.com/usa-map/',
+  },
+  { title: 'wis2box', href: 'https://github.com/World-Meteorological-Organization/wis2box', category: 'Open source', image: wis2box },
 ];
 
 export const experience = [
