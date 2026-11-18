@@ -1,0 +1,62 @@
+---
+import { Icon } from 'astro-icon/components';
+import { profile, socials } from '../data/site';
+---
+
+<footer class="site-footer">
+  <div class="container inner">
+    <p>© {new Date().getFullYear()} {profile.fullName}</p>
+    <ul>
+      {
+        socials.map((social) => (
+          <li>
+            <a href={social.href} aria-label={social.label}>
+              <Icon name={social.icon} aria-hidden="true" />
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    border-top: 1px solid var(--border);
+    padding-block: 2rem;
+    color: var(--muted);
+    font-size: 0.875rem;
+  }
+
+  .inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  p {
+    margin: 0;
+  }
+
+  ul {
+    display: flex;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  a {
+    color: var(--muted);
+  }
+
+  a:hover {
+    color: var(--accent);
+  }
+
+  svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+</style>

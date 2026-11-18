@@ -1,0 +1,81 @@
+---
+import ThemeToggle from './ThemeToggle.astro';
+import { profile } from '../data/site';
+
+const links = [
+  { href: '/#about', label: 'About' },
+  { href: '/#projects', label: 'Projects' },
+  { href: '/#experience', label: 'Experience' },
+];
+---
+
+<header class="site-header">
+  <div class="container inner">
+    <a class="brand" href="/">{profile.name}</a>
+    <nav aria-label="Primary">
+      <ul>
+        {
+          links.map((link) => (
+            <li>
+              <a href={link.href}>{link.label}</a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+    <ThemeToggle />
+  </div>
+</header>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: color-mix(in srgb, var(--bg) 85%, transparent);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .inner {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    height: 3.75rem;
+  }
+
+  .brand {
+    font-weight: 650;
+    color: var(--text);
+    text-decoration: none;
+    margin-right: auto;
+  }
+
+  ul {
+    display: flex;
+    gap: 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  nav a {
+    color: var(--muted);
+    font-size: 0.9375rem;
+    text-decoration: none;
+  }
+
+  nav a:hover {
+    color: var(--text);
+  }
+
+  @media (max-width: 30rem) {
+    ul {
+      gap: 0.875rem;
+    }
+
+    nav a {
+      font-size: 0.875rem;
+    }
+  }
+</style>
