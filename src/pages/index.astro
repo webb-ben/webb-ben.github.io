@@ -1,0 +1,317 @@
+---
+import { Image } from 'astro:assets';
+import { Icon } from 'astro-icon/components';
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import Section from '../components/Section.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import { profile, socials, focus, projects, experience, education, skills, organizations } from '../data/site';
+---
+
+<Base>
+  <Header />
+  <main id="main" class="container">
+    <section class="hero" id="about" aria-label="Introduction">
+      <Image src={profile.avatar} alt={profile.fullName} width={112} height={112} densities={[1, 2]} class="avatar" loading="eager" />
+      <h1>{profile.name}</h1>
+      <p class="title">{profile.title}</p>
+      {profile.about.map((paragraph) => <p class="lede">{paragraph}</p>)}
+      <ul class="contact">
+        <li>
+          <Icon name="lucide:mail" aria-hidden="true" />
+          <a href={`mailto:${profile.email}`}>{profile.email}</a>
+        </li>
+        <li>
+          <Icon name="lucide:map-pin" aria-hidden="true" />
+          <span>{profile.location}</span>
+        </li>
+        {
+          socials.map((social) => (
+            <li>
+              <Icon name={social.icon} aria-hidden="true" />
+              <a href={social.href}>{social.label}</a>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <Section id="focus" title="What I'm up to">
+      <ul class="focus">
+        {
+          focus.map((item) => (
+            <li>
+              <span class="focus-icon">
+                <Icon name={item.icon} aria-hidden="true" />
+              </span>
+              <div>
+                <h3>{item.title}</h3>
+                <p>{item.text}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ul>
+    </Section>
+
+    <Section id="projects" title="Projects">
+      <ul class="projects">
+        {projects.map((project) => <ProjectCard project={project} />)}
+      </ul>
+    </Section>
+
+    <Section id="experience" title="Experience">
+      <ol class="timeline">
+        {
+          experience.map((job) => (
+            <li>
+              <div class="timeline-head">
+                <h3>{job.role}</h3>
+                <span>{job.period}</span>
+              </div>
+              <p>{job.text}</p>
+            </li>
+          ))
+        }
+      </ol>
+    </Section>
+
+    <Section id="education" title="Education">
+      <ol class="timeline">
+        {
+          education.map((item) => (
+            <li>
+              <div class="timeline-head">
+                <h3>{item.school}</h3>
+                <span>{item.period}</span>
+              </div>
+              <p>{item.text}</p>
+            </li>
+          ))
+        }
+      </ol>
+    </Section>
+
+    <Section id="skills" title="Skills">
+      <ul class="tags">
+        {skills.map((skill) => <li>{skill}</li>)}
+      </ul>
+    </Section>
+
+    <Section id="organizations" title="Organizations I collaborate with">
+      <ul class="orgs">
+        {
+          organizations.map((org) => (
+            <li>
+              <a href={org.href} title={org.name}>
+                <Image src={org.logo} alt={org.name} height={48} densities={[1, 2]} loading="lazy" />
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </Section>
+  </main>
+  <Footer />
+</Base>
+
+<style>
+  .hero {
+    padding-block: 4rem 3rem;
+  }
+
+  .avatar {
+    width: 7rem;
+    height: 7rem;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    margin-bottom: 1.5rem;
+  }
+
+  h1 {
+    font-size: clamp(2.25rem, 6vw, 3rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .title {
+    font-size: 1.125rem;
+    color: var(--accent);
+    font-weight: 500;
+    margin: 0.35rem 0 1.5rem;
+  }
+
+  .lede {
+    color: var(--muted);
+    max-width: 38rem;
+  }
+
+  .contact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.25rem;
+    margin: 1.75rem 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.9375rem;
+  }
+
+  .contact li {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--muted);
+  }
+
+  .contact svg {
+    width: 1.05rem;
+    height: 1.05rem;
+  }
+
+  .focus {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+    gap: 1.5rem 2rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .focus li {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .focus-icon {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--radius);
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+
+  .focus-icon svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+
+  .focus p,
+  .timeline p {
+    color: var(--muted);
+    font-size: 0.9375rem;
+    margin: 0;
+  }
+
+  .projects {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+    gap: 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .timeline {
+    margin: 0;
+    padding: 0 0 0 1.25rem;
+    list-style: none;
+    border-left: 2px solid var(--border);
+  }
+
+  .timeline li {
+    position: relative;
+  }
+
+  .timeline li + li {
+    margin-top: 1.75rem;
+  }
+
+  .timeline li::before {
+    content: '';
+    position: absolute;
+    left: calc(-1.25rem - 6px);
+    top: 0.45rem;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 4px var(--bg);
+  }
+
+  .timeline-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.25rem 1rem;
+  }
+
+  .timeline-head span {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--muted);
+  }
+
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .tags li {
+    padding: 0.3rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    font-size: 0.875rem;
+  }
+
+  .orgs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Logos are drawn for white backgrounds, so keep them on light tiles in both themes. */
+  .orgs a {
+    display: grid;
+    place-items: center;
+    height: 5rem;
+    padding: 1rem;
+    border-radius: var(--radius);
+    background: #fff;
+    border: 1px solid var(--border);
+  }
+
+  .orgs img {
+    max-height: 3rem;
+    width: auto;
+    object-fit: contain;
+    filter: grayscale(1);
+    opacity: 0.8;
+    transition:
+      filter 0.15s,
+      opacity 0.15s;
+  }
+
+  .orgs a:hover img {
+    filter: none;
+    opacity: 1;
+  }
+</style>
